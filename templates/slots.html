@@ -47,14 +47,19 @@
       for (let giorno in slotSet) {
         let dow = weekdayMap[giorno];
         slotSet[giorno].forEach(ora => {
+          let hour = parseInt(ora.slice(0, 2));
+          let endHour = hour + 1;
+          let endTimeStr = (endHour < 10 ? '0' : '') + endHour + ':00';
+
           events.push({
             title: 'Disponibile',
-            startTime: ora,
-            endTime: `${parseInt(ora.slice(0,2)) + 1}:00`,
             daysOfWeek: [dow],
-            display: 'background',
+            startTime: ora,
+            endTime: endTimeStr,
+            allDay: false,
             backgroundColor: '#90ee90',
-            borderColor: '#2ecc71'
+            borderColor: '#2ecc71',
+            editable: false
           });
         });
       }
@@ -66,8 +71,12 @@
         allDaySlot: false,
         events: events,
         selectable: true,
+        nowIndicator: true,
         select: function(info) {
           alert('Hai selezionato lo slot: ' + info.startStr);
+        },
+        eventClick: function(info) {
+          alert('Hai cliccato sullo slot disponibile: ' + info.event.start.toLocaleString());
         }
       });
 
