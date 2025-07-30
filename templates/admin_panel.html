@@ -12,10 +12,21 @@
     form { margin: 0; }
     input, select, button { padding: 5px; }
     .logout { margin-top: 20px; }
+    .flash { padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+    .success { background-color: #d4edda; color: #155724; }
+    .error { background-color: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
   <h1>Admin Panel</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
   <h2>Slot esistenti</h2>
   <table>
@@ -25,9 +36,9 @@
       <th>Ora</th>
       <th>Azioni</th>
     </tr>
-    {% for slot in slots %}
+    {% for idx, slot in slots|enumerate %}
     <tr>
-      <form method="post" action="{{ url_for('edit_slot', idx=loop.index0) }}">
+      <form method="post" action="{{ url_for('edit_slot', idx=idx) }}">
         <td>
           <select name="servizio" required>
             <option value="1to1" {% if slot.servizio == "1to1" %}selected{% endif %}>1to1</option>
