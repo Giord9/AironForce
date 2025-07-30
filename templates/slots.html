@@ -1,54 +1,78 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8" />
-    <title>{{ nome }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        h1 {
-            color: #007BFF;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 600px;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>{{ nome }}</title>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #007BFF;
+    }
+    #calendar {
+      max-width: 700px;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
-    <h1>{{ nome }}</h1>
-    <h3>Slot settimanali disponibili:</h3>
-    <table>
-        <tr>
-            <th>Giorno</th>
-            <th>Orari disponibili</th>
-        </tr>
-        {% for giorno, orari in slot_settimanali.items() %}
-        <tr>
-            <td>{{ giorno }}</td>
-            <td>
-                {% for ora in orari %}
-                    {{ ora }}{% if not loop.last %}, {% endif %}
-                {% endfor %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+  <h1>{{ nome }}</h1>
+  <div id='calendar'></div>
 
-    <p><a href="/">← Torna alla home</a></p>
+  <p><a href="/">← Torna alla home</a></p>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+
+      const slotSet = {{ slot_settimanali | tojson }};
+
+      const weekdayMap = {
+        "Lunedì": 1,
+        "Martedì": 2,
+        "Mercoledì": 3,
+        "Giovedì": 4,
+        "Venerdì": 5,
+        "Sabato": 6,
+        "Domenica": 0
+      };
+
+      const events = [];
+
+      for (let giorno in slotSet) {
+        let dow = weekdayMap[giorno];
+        slotSet[giorno].forEach(ora => {
+          events.push({
+            title: 'Disponibile',
+            startTime: ora,
+            endTime: `${parseInt(ora.slice(0,2)) + 1}:00`,
+            daysOfWeek: [dow],
+            display: 'background',
+            backgroundColor: '#90ee90',
+            borderColor: '#2ecc71'
+          });
+        });
+      }
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        slotMinTime: "08:00:00",
+        slotMaxTime: "21:00:00",
+        allDaySlot: false,
+        events: events,
+        selectable: true,
+        select: function(info) {
+          alert('Hai selezionato lo slot: ' + info.startStr);
+        }
+      });
+
+      calendar.render();
+    });
+  </script>
 </body>
 </html>
