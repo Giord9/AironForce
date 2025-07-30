@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <h1>Gestione Slot Disponibili</h1>
+  <p><a href="{{ url_for('admin_logout') }}">Logout</a></p>
+
+  <h2>Slot Attuali</h2>
+  {% for servizio, giorni in slots.items() %}
+    <h3>{{ servizio }}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Giorno</th>
+          <th>Orari</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for giorno, orari in giorni.items() %}
+          <tr>
+            <td>{{ giorno }}</td>
+            <td>{{ orari | join(", ") }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+
+  <h2>Aggiungi Nuovo Slot</h2>
+  <form method="POST">
+    <label>Servizio:
+      <select name="servizio">
+        <option value="1to1">1to1</option>
+        <option value="coppia">coppia</option>
+        <option value="funzionale">funzionale</option>
+      </select>
+    </label><br/><br/>
+    <label>Giorno:
+      <select name="giorno">
+        <option>Lunedì</option>
+        <option>Martedì</option>
+        <option>Mercoledì</option>
+        <option>Giovedì</option>
+        <option>Venerdì</option>
+        <option>Sabato</option>
+        <option>Domenica</option>
+      </select>
+    </label><br/><br/>
+    <label>Orario (es. 10:00):
+      <input type="time" name="orario" required />
+    </label><br/><br/>
+    <button type="submit">Aggiungi Slot</button>
+  </form>
+
+</body>
+</html>
