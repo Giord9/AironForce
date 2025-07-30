@@ -1,1 +1,6 @@
-[]
+[
+  {"servizio": "1to1", "giorno": "Lunedì", "ora": "10:00"},
+  {"servizio": "1to1", "giorno": "Mercoledì", "ora": "11:00"},
+  {"servizio": "coppia", "giorno": "Martedì", "ora": "18:00"},
+  {"servizio": "funzionale", "giorno": "Lunedì", "ora": "19:00"}
+]

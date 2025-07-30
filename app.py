@@ -1,19 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for
 import json
-import os
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
 
-def carica_slots():
-    if os.path.exists("slots.json"):
-        with open("slots.json", "r") as f:
+# Funzione per caricare gli slot dal file JSON
+def load_slots():
+    try:
+        with open("slots.json", "r", encoding="utf-8") as f:
             return json.load(f)
-    return []
+    except FileNotFoundError:
+        return []
 
-def salva_slots(slots):
-    with open("slots.json", "w") as f:
-        json.dump(slots, f, indent=4)
+# Funzione per salvare gli slot nel file JSON
+def save_slots(slots):
+    with open("slots.json", "w", encoding="utf-8") as f:
+        json.dump(slots, f, ensure_ascii=False, indent=2)
 
 @app.route("/")
 def home():
@@ -27,7 +28,11 @@ def servizio(servizio):
         "funzionale": "Allenamento Funzionale"
     }
 
-    slots = carica_slots()
+    nome = nomi_servizi.get(servizio, "Servizio")
+
+    slots = load_slots()
+
+    # Organizza gli slot per giorno
     slot_settimanali = {}
     for slot in slots:
         if slot["servizio"] == servizio:
@@ -35,83 +40,48 @@ def servizio(servizio):
             ora = slot["ora"]
             slot_settimanali.setdefault(giorno, []).append(ora)
 
-    nome = nomi_servizi.get(servizio, "Servizio")
     return render_template("slots.html", nome=nome, slot_settimanali=slot_settimanali)
 
-# --- ADMIN LOGIN ---
+# --- Admin routes ---
 
-@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        if username == "admin" and password == "password123":  # Cambia password in modo sicuro!
-            session["logged_in"] = True
-            return redirect(url_for("admin_panel"))
-        else:
-            return "Credenziali errate", 401
-    return render_template("admin_login.html")
-
-@app.route("/admin/logout")
-def admin_logout():
-    session.pop("logged_in", None)
-    return redirect(url_for("home"))
-
-# --- ADMIN PANEL ---
-
-@app.route("/admin/panel")
+@app.route('/admin/panel', methods=['GET'])
 def admin_panel():
-    if not session.get("logged_in"):
-        return redirect(url_for("admin_login"))
-    slots = carica_slots()
+    slots = load_slots()
     return render_template("admin_panel.html", slots=slots)
 
-# --- AGGIUNGI SLOT ---
-
-@app.route("/admin/add_slot", methods=["POST"])
+@app.route('/admin/add_slot', methods=['POST'])
 def add_slot():
-    if not session.get("logged_in"):
-        return redirect(url_for("admin_login"))
+    servizio = request.form.get('servizio')
+    giorno = request.form.get('giorno')
+    ora = request.form.get('ora')
 
-    servizio = request.form.get("servizio")
-    giorno = request.form.get("giorno")
-    ora = request.form.get("ora")
-
-    if not (servizio and giorno and ora):
-        return "Dati slot incompleti", 400
-
-    slots = carica_slots()
+    slots = load_slots()
     slots.append({"servizio": servizio, "giorno": giorno, "ora": ora})
-    salva_slots(slots)
+    save_slots(slots)
+    return redirect(url_for('admin_panel'))
 
-    return redirect(url_for("admin_panel"))
-
-# --- MODIFICA/ELIMINA SLOT ---
-
-@app.route("/admin/edit_slot/<int:idx>", methods=["POST"])
+@app.route('/admin/edit_slot/<int:idx>', methods=['POST'])
 def edit_slot(idx):
-    if not session.get("logged_in"):
-        return redirect(url_for("admin_login"))
+    action = request.form.get('action')
+    slots = load_slots()
 
-    slots = carica_slots()
-    if idx < 0 or idx >= len(slots):
-        return "Indice slot non valido", 400
+    if 0 <= idx < len(slots):
+        if action == 'modifica':
+            servizio = request.form.get('servizio')
+            giorno = request.form.get('giorno')
+            ora = request.form.get('ora')
+            slots[idx] = {"servizio": servizio, "giorno": giorno, "ora": ora}
+            save_slots(slots)
+        elif action == 'elimina':
+            slots.pop(idx)
+            save_slots(slots)
 
-    action = request.form.get("action")
-    if action == "modifica":
-        servizio = request.form.get("servizio")
-        giorno = request.form.get("giorno")
-        ora = request.form.get("ora")
-        if not (servizio and giorno and ora):
-            return "Dati slot incompleti", 400
-        slots[idx] = {"servizio": servizio, "giorno": giorno, "ora": ora}
-    elif action == "elimina":
-        slots.pop(idx)
-    else:
-        return "Azione non riconosciuta", 400
+    return redirect(url_for('admin_panel'))
 
-    salva_slots(slots)
-    return redirect(url_for("admin_panel"))
+@app.route('/admin/logout')
+def admin_logout():
+    # Per ora solo redirect alla home, poi potrai aggiungere login vero
+    return redirect(url_for('home'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
