@@ -3,19 +3,52 @@
 <head>
     <meta charset="UTF-8" />
     <title>{{ nome }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            color: #007BFF;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <h1>{{ nome }}</h1>
-    <h3>Slot disponibili:</h3>
-    {% if slot_disponibili %}
-        <ul>
-            {% for s in slot_disponibili %}
-                <li>{{ s }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Nessuno slot disponibile al momento.</p>
-    {% endif %}
-    <a href="/">Torna alla home</a>
+    <h3>Slot settimanali disponibili:</h3>
+    <table>
+        <tr>
+            <th>Giorno</th>
+            <th>Orari disponibili</th>
+        </tr>
+        {% for giorno, orari in slot_settimanali.items() %}
+        <tr>
+            <td>{{ giorno }}</td>
+            <td>
+                {% for ora in orari %}
+                    {{ ora }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p><a href="/">← Torna alla home</a></p>
 </body>
 </html>
