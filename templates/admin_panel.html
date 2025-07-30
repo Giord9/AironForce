@@ -25,9 +25,9 @@
       <th>Ora</th>
       <th>Azioni</th>
     </tr>
-    {% for idx, slot in enumerate(slots) %}
+    {% for slot in slots %}
     <tr>
-      <form method="post" action="{{ url_for('edit_slot', idx=idx) }}">
+      <form method="post" action="{{ url_for('edit_slot', idx=loop.index0) }}">
         <td>
           <select name="servizio" required>
             <option value="1to1" {% if slot.servizio == "1to1" %}selected{% endif %}>1to1</option>
