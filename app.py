@@ -31,3 +31,6 @@ def servizio(servizio):
     slot = slot_settimanali.get(servizio, {})
 
     return render_template("slots.html", nome=nome, slot_settimanali=slot)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
