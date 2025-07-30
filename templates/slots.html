@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ nome }}</title>
+</head>
+<body>
+    <h1>{{ nome }}</h1>
+    <h3>Slot disponibili:</h3>
+    {% if slot_disponibili %}
+        <ul>
+            {% for s in slot_disponibili %}
+                <li>{{ s }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nessuno slot disponibile al momento.</p>
+    {% endif %}
+    <a href="/">Torna alla home</a>
+</body>
+</html>
