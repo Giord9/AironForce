@@ -30,4 +30,4 @@ def servizio(servizio):
     nome = nomi_servizi.get(servizio, "Servizio")
     slot = slot_settimanali.get(servizio, {})
 
-    return render_template("slot.html", nome=nome, slot_settimanali=slot)
+    return render_template("slots.html", nome=nome, slot_settimanali=slot)
