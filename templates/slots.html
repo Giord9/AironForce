@@ -29,37 +29,40 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const calendarEl = document.getElementById('calendar');
-
       const slotSet = {{ slot_settimanali | tojson }};
 
+      console.log("Slot settimanali ricevuti:", slotSet);
+
       const weekdayMap = {
+        "Domenica": 0,
         "Lunedì": 1,
         "Martedì": 2,
         "Mercoledì": 3,
         "Giovedì": 4,
         "Venerdì": 5,
-        "Sabato": 6,
-        "Domenica": 0
+        "Sabato": 6
       };
 
       const events = [];
 
+      // Crea eventi cliccabili per ogni slot
       for (let giorno in slotSet) {
-        let dow = weekdayMap[giorno];
+        const dow = weekdayMap[giorno];
         slotSet[giorno].forEach(ora => {
-          let hour = parseInt(ora.slice(0, 2));
-          let endHour = hour + 1;
-          let endTimeStr = (endHour < 10 ? '0' : '') + endHour + ':00';
+          // FullCalendar vuole orari in formato HH:mm:ss
+          const startTime = ora + ":00";
+          // Calcolo endTime (1 ora dopo)
+          const endHour = (parseInt(ora.slice(0,2)) + 1).toString().padStart(2, '0');
+          const endTime = endHour + ":00:00";
 
           events.push({
             title: 'Disponibile',
             daysOfWeek: [dow],
-            startTime: ora,
-            endTime: endTimeStr,
-            allDay: false,
+            startTime: startTime,
+            endTime: endTime,
             backgroundColor: '#90ee90',
             borderColor: '#2ecc71',
-            editable: false
+            // rendiamo cliccabile (default è cliccabile)
           });
         });
       }
@@ -71,12 +74,11 @@
         allDaySlot: false,
         events: events,
         selectable: true,
-        nowIndicator: true,
         select: function(info) {
-          alert('Hai selezionato lo slot: ' + info.startStr);
+          alert('Hai selezionato lo slot:\nData e ora inizio: ' + info.startStr);
         },
         eventClick: function(info) {
-          alert('Hai cliccato sullo slot disponibile: ' + info.event.start.toLocaleString());
+          alert('Hai cliccato sullo slot disponibile:\n' + info.event.title + "\nInizio: " + info.event.start.toLocaleString());
         }
       });
 
