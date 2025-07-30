@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>{{ nome }}</title>
-  <!-- FullCalendar CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-  <!-- FullCalendar JS -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -30,8 +28,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      console.log("FullCalendar object:", FullCalendar); // verifica che sia caricato
-
       const calendarEl = document.getElementById('calendar');
 
       const slotSet = {{ slot_settimanali | tojson }};
@@ -51,14 +47,11 @@
       for (let giorno in slotSet) {
         let dow = weekdayMap[giorno];
         slotSet[giorno].forEach(ora => {
-          let startHour = ora;
-          let endHour = ("0" + (parseInt(ora.slice(0, 2)) + 1)).slice(-2) + ":00";
-
           events.push({
             title: 'Disponibile',
+            startTime: ora,
+            endTime: `${parseInt(ora.slice(0,2)) + 1}:00`,
             daysOfWeek: [dow],
-            startTime: startHour,
-            endTime: endHour,
             display: 'background',
             backgroundColor: '#90ee90',
             borderColor: '#2ecc71'
