@@ -27,53 +27,50 @@
   <p><a href="/">← Torna alla home</a></p>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const calendarEl = document.getElementById('calendar');
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
 
-      const slotSet = {{ slot_settimanali | tojson }};
-      console.log("Dati slot ricevuti:", slotSet);
+    const slots = {{ slots | tojson }};
+    console.log("Dati slot ricevuti:", slots);
 
-      const weekdayMap = {
-        "Lunedì": 1,
-        "Martedì": 2,
-        "Mercoledì": 3,
-        "Giovedì": 4,
-        "Venerdì": 5,
-        "Sabato": 6,
-        "Domenica": 0
-      };
+    const weekdayMap = {
+      "Lunedì": 1,
+      "Martedì": 2,
+      "Mercoledì": 3,
+      "Giovedì": 4,
+      "Venerdì": 5,
+      "Sabato": 6,
+      "Domenica": 0
+    };
 
-      const events = [];
+    const events = [];
 
-      for (let giorno in slotSet) {
-        let dow = weekdayMap[giorno];
-        slotSet[giorno].forEach(ora => {
-          events.push({
-            title: 'Disponibile',
-            startTime: ora,
-            endTime: `${parseInt(ora.slice(0,2)) + 1}:00`,
-            daysOfWeek: [dow],
-            display: 'background',
-            backgroundColor: '#90ee90',
-            borderColor: '#2ecc71'
-          });
-        });
-      }
-
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
-        slotMinTime: "08:00:00",
-        slotMaxTime: "21:00:00",
-        allDaySlot: false,
-        events: events,
-        selectable: true,
-        select: function(info) {
-          alert('Hai selezionato lo slot: ' + info.startStr);
-        }
+    slots.forEach(slot => {
+      events.push({
+        title: slot.coach, // mostriamo il nome del coach
+        startTime: slot.ora,
+        endTime: `${parseInt(slot.ora.slice(0, 2)) + 1}:00`,
+        daysOfWeek: [weekdayMap[slot.giorno]],
+        backgroundColor: '#28a745', // verde scuro per evento visibile
+        borderColor: '#1e7e34'
+        // NON mettere display: 'background' così l'evento sarà visibile e pieno
       });
-
-      calendar.render();
     });
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'timeGridWeek',
+      slotMinTime: "08:00:00",
+      slotMaxTime: "21:00:00",
+      allDaySlot: false,
+      events: events,
+      selectable: true,
+      select: function(info) {
+        alert('Hai selezionato lo slot: ' + info.startStr);
+      }
+    });
+
+    calendar.render();
+  });
   </script>
 </body>
 </html>

@@ -40,38 +40,22 @@ def servizio(servizio):
         "funzionale": "Allenamento Funzionale"
     }
 
-    slot_settimanali = {
-        "1to1": {
-            "Lunedì": ["10:00", "11:00", "16:00", "17:00"],
-            "Mercoledì": ["10:00", "11:00", "16:00", "17:00"],
-            "Venerdì": ["10:00", "11:00", "16:00", "17:00"],
-            "Sabato": ["10:00", "11:00", "16:00", "17:00"],
-        },
-        "coppia": {
-            "Martedì": ["18:00", "19:00"],
-            "Giovedì": ["18:00", "19:00"],
-        },
-        "funzionale": {
-            "Lunedì": ["19:00"],
-            "Mercoledì": ["20:00"],
-        }
-    }
+    coach_name = "Raffaella Esposito"  # il nome fisso del coach
 
-    # Carichiamo gli slot da file e filtriamo per servizio
     all_slots = load_slots()
-    filtered_slots = {}
+    filtered_slots = []
     for slot in all_slots:
         if slot['servizio'] == servizio:
-            giorno = slot['giorno']
-            ora = slot['ora']
-            if giorno not in filtered_slots:
-                filtered_slots[giorno] = []
-            filtered_slots[giorno].append(ora)
-    app.logger.info(f"Slots per {servizio}: {filtered_slots}")
+            filtered_slots.append({
+                'giorno': slot['giorno'],
+                'ora': slot['ora'],
+                'coach': coach_name
+            })
+
     nome = nomi_servizi.get(servizio, "Servizio")
 
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots)
-
+    return render_template("slots.html", nome=nome, slots=filtered_slots)
+    
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
