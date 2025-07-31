@@ -54,8 +54,8 @@ def servizio(servizio):
 
     nome = nomi_servizi.get(servizio, "Servizio")
 
-    return render_template("slots.html", nome=nome, slots=filtered_slots)
-    
+    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots)
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
