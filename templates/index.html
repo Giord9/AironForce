@@ -1,15 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}AironForce - Home{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-<h1>Benvenuto in AironForce!</h1>
-<p>Ciao, sono Raffaella e ho 10 anni di esperienza in allenamento funzionale. Inizia subito prenotando la tua prima sessione gratuita.</p>
+<section id="home">
+  <h1>Benvenuto in AironForce!</h1>
+  <p>Ciao, sono Raffaella Esposito, personal trainer con 10 anni di esperienza in allenamento funzionale. Inizia subito prenotando la tua prima sessione gratuita.</p>
+</section>
 
-<h2 id="servizi">Servizi</h2>
-<ul>
-  <li><a href="/servizi/1to1">Allenamento Personal 1to1</a></li>
-  <li><a href="/servizi/coppia">Allenamento Personal di Coppia</a></li>
-  <li><a href="/servizi/funzionale">Allenamento Funzionale</a></li>
-</ul>
+<section id="servizi">
+  <h2>Servizi</h2>
+  <ul>
+    <li><a href="/servizi/1to1">Allenamento Personal 1to1</a></li>
+    <li><a href="/servizi/coppia">Allenamento Personal di Coppia</a></li>
+    <li><a href="/servizi/funzionale">Allenamento Funzionale</a></li>
+  </ul>
+</section>
+
+<section id="chi-siamo">
+  <h2>Chi Siamo</h2>
+  <img src="{{ url_for('static', filename='images/AironFox.jpg') }}" alt="Raffaella Esposito" style="width: 250px; border-radius: 12px; margin-bottom: 20px;" />
+  <p>Mi chiamo Raffaella Esposito e da oltre 10 anni mi dedico con passione al benessere e alla forma fisica delle persone. Il mio obiettivo è guidarti verso una versione più sana, forte e motivata di te stesso attraverso programmi personalizzati e allenamenti funzionali efficaci.</p>
+</section>
+
 {% endblock %}
