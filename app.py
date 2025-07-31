@@ -44,20 +44,26 @@ def servizio(servizio):
         "funzionale": "Allenamento Funzionale"
     }
 
-    coach_name = "Raffaella Esposito"  # il nome fisso del coach
-
+    coach_name = "Raffaella Esposito"
     all_slots = load_slots()
+    prenotazioni = load_prenotazioni()
+
     filtered_slots = []
     for slot in all_slots:
         if slot['servizio'] == servizio:
+            prenotato = any(
+                p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
+                for p in prenotazioni
+            )
+            stato = "prenotato" if prenotato else "disponibile"
             filtered_slots.append({
                 'giorno': slot['giorno'],
                 'ora': slot['ora'],
-                'coach': coach_name
+                'coach': coach_name,
+                'stato': stato
             })
 
     nome = nomi_servizi.get(servizio, "Servizio")
-
     return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -180,5 +186,47 @@ def area_personale():
         return redirect(url_for('login'))
     return render_template("area_personale.html", user_email=session['user'])
 
+PRENOTAZIONI_FILE = 'prenotazioni.json'
+
+def load_prenotazioni():
+    if not os.path.exists(PRENOTAZIONI_FILE):
+        return []
+    with open(PRENOTAZIONI_FILE, 'r') as f:
+        return json.load(f)
+
+def save_prenotazioni(data):
+    with open(PRENOTAZIONI_FILE, 'w') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+@app.route('/prenota_slot', methods=['POST'])
+def prenota_slot():
+    if 'user' not in session:
+        return "Non autorizzato", 403
+
+    data = request.get_json()
+    user_email = session['user']
+    servizio = data.get('servizio')
+    giorno = data.get('giorno')
+    ora = data.get('ora')
+
+    if not all([servizio, giorno, ora]):
+        return "Dati mancanti", 400
+
+    prenotazioni = load_prenotazioni()
+    già_prenotato = any(
+        p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora
+        for p in prenotazioni
+    )
+    if già_prenotato:
+        return "Slot già prenotato", 409
+
+    prenotazioni.append({
+        'email': user_email,
+        'servizio': servizio,
+        'giorno': giorno,
+        'ora': ora
+    })
+    save_prenotazioni(prenotazioni)
+    return "Prenotazione effettuata", 200
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)

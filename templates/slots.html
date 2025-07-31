@@ -25,7 +25,7 @@
       if (!slotsByDay[slot.giorno]) {
         slotsByDay[slot.giorno] = [];
       }
-      slotsByDay[slot.giorno].push({ora: slot.ora, coach: slot.coach});
+      slotsByDay[slot.giorno].push({ora: slot.ora, coach: slot.coach, stato: slot.stato});
     });
 
     console.log("slotsByDay:", slotsByDay);
@@ -54,6 +54,9 @@
           backgroundColor: '#28a745',
           borderColor: '#1e7e34',
           display: 'auto',
+          backgroundColor: slot.stato === 'prenotato' ? '#dc3545' : '#28a745',
+          borderColor: slot.stato === 'prenotato' ? '#a71d2a' : '#1e7e34',
+          title: slot.stato === 'prenotato' ? 'Occupato' : slot.coach,
         });
       });
     }
@@ -69,7 +72,32 @@
       events: events,
       selectable: true,
       select: function(info) {
-        alert('Hai selezionato lo slot: ' + info.startStr);
+        const giornoSettimana = info.start.toLocaleDateString('it-IT', { weekday: 'long' });
+        const giorno = giornoSettimana.charAt(0).toUpperCase() + giornoSettimana.slice(1);
+        const ora = info.start.toTimeString().slice(0, 5);
+        const conferma = confirm(`Vuoi prenotare lo slot ${giorno} alle ${ora}?`);
+        if (conferma) {
+            fetch('/prenota_slot', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                servizio: "{{ nome.split(' ')[-1]|lower }}",  // es. '1to1'
+                giorno: giorno,
+                ora: ora
+              })
+            }).then(resp => {
+              if (resp.status === 200) {
+                alert("Prenotazione effettuata con successo!");
+                location.reload();
+              } else if (resp.status === 409) {
+                alert("Questo slot è già stato prenotato.");
+              } else {
+                alert("Errore durante la prenotazione.");
+              }
+            });
+        }
       }
     });
 
