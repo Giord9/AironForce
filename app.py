@@ -67,7 +67,7 @@ def servizio(servizio):
             if giorno not in filtered_slots:
                 filtered_slots[giorno] = []
             filtered_slots[giorno].append(ora)
-
+    app.logger.info(f"Slots per {servizio}: {filtered_slots}")
     nome = nomi_servizi.get(servizio, "Servizio")
 
     return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots)
