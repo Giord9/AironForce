@@ -1,31 +1,15 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8" />
-    <title>Login Admin</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        form { max-width: 300px; margin: auto; padding: 20px; background: white; border-radius: 8px; }
-        input { width: 100%; padding: 8px; margin: 8px 0; }
-        button { padding: 8px 16px; }
-        .error { color: red; }
-    </style>
-</head>
-<body>
-    <nav style="background: #007BFF; padding: 10px;">
-      <a href="/" style="color: white; margin-right: 20px; text-decoration: none;">Home</a>
-      <a href="/#servizi" style="color: white; margin-right: 20px; text-decoration: none;">Servizi</a>
-      <a href="/admin/login" style="color: white; text-decoration: none;">Admin</a>
-    </nav>
+{% extends "base.html" %}
 
-    <h1>Login Admin</h1>
-    <form method="post">
-        <label>Password:</label>
-        <input type="password" name="password" required />
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
-        <button type="submit">Entra</button>
-    </form>
-</body>
-</html>
+{% block title %}Login Admin{% endblock %}
+
+{% block content %}
+<h1>Login Admin</h1>
+<form method="post">
+  <label>Password:</label>
+  <input type="password" name="password" required />
+  {% if error %}
+    <p class="error" style="color: red;">{{ error }}</p>
+  {% endif %}
+  <button type="submit">Entra</button>
+</form>
+{% endblock %}
