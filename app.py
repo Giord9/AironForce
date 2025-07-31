@@ -32,6 +32,10 @@ def admin_required(f):
 def home():
     return render_template("index.html")
 
+@app.route("/chi-siamo")
+def chi_siamo():
+    return render_template("chi_siamo.html")
+
 @app.route('/servizi/<servizio>')
 def servizio(servizio):
     nomi_servizi = {

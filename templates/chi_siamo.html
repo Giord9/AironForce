@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Chi Siamo{% endblock %}
+
+{% block content %}
+  <h1>Chi sono</h1>
+  <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+    <img src="{{ url_for('static', filename='images/AironFox.jpeg') }}" alt="Raffaella Esposito" style="max-width: 250px; border-radius: 10px;">
+    <div style="max-width: 600px;">
+      <p>Ciao! Mi chiamo <strong>Raffaella Esposito</strong>, sono una personal trainer con oltre 10 anni di esperienza in allenamento funzionale, 1to1 e in coppia.</p>
+      <p>Aiuto le persone a raggiungere i loro obiettivi fisici con programmi personalizzati, motivazione e costanza.</p>
+      <p>Ti aspetto per iniziare insieme il tuo percorso di benessere 💪</p>
+    </div>
+  </div>
+  <p>
+  Seguimi su Instagram:
+  <a href="https://www.instagram.com/tuo_username" target="_blank" style="color: #E1306C; text-decoration: none;">
+    <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/instagram.svg" alt="Instagram" style="width: 24px; vertical-align: middle; margin-left: 8px;">
+    @coach.esposito_raffaella
+  </a>
+  </p>
+{% endblock %}
