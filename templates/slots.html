@@ -13,22 +13,42 @@
   document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
 
+    // Dati slot: array di oggetti {coach, giorno, ora}
     const slotSet = {{ slot_settimanali | tojson }};
     console.log("slotSet:", slotSet);
+
+    // Raggruppa per giorno della settimana
+    const slotsByDay = {};
+
+    slotSet.forEach(slot => {
+      if (!slotsByDay[slot.giorno]) {
+        slotsByDay[slot.giorno] = [];
+      }
+      slotsByDay[slot.giorno].push({ora: slot.ora, coach: slot.coach});
+    });
+
+    console.log("slotsByDay:", slotsByDay);
+
     const weekdayMap = {
-      "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
-      "Venerdì": 5, "Sabato": 6, "Domenica": 0
+      "Lunedì": 1,
+      "Martedì": 2,
+      "Mercoledì": 3,
+      "Giovedì": 4,
+      "Venerdì": 5,
+      "Sabato": 6,
+      "Domenica": 0
     };
 
     const events = [];
 
-    for (let giorno in slotSet) {
+    // Crea eventi per ogni slot
+    for (let giorno in slotsByDay) {
       let dow = weekdayMap[giorno];
-      slotSet[giorno].forEach(ora => {
+      slotsByDay[giorno].forEach(slot => {
         events.push({
-          title: 'Raffaella Esposito',
-          startTime: ora,
-          endTime: `${parseInt(ora.slice(0,2)) + 1}:00`,
+          title: slot.coach, // Mostra il nome del coach
+          startTime: slot.ora,
+          endTime: `${String(parseInt(slot.ora.slice(0, 2)) + 1).padStart(2, '0')}:00`,
           daysOfWeek: [dow],
           backgroundColor: '#28a745',
           borderColor: '#1e7e34',
@@ -37,6 +57,7 @@
       });
     }
 
+    // Inizializza il calendario FullCalendar
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'timeGridWeek',
       slotMinTime: "08:00:00",
