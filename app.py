@@ -129,6 +129,56 @@ def edit_slot(idx):
         flash("Slot eliminato con successo!", "success")
 
     return redirect(url_for('admin_panel'))
+  
+  # --- Gestione utenti ---
+
+def load_users():
+    if not os.path.exists("users.json"):
+        return []
+    with open("users.json", "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open("users.json", "w") as f:
+        json.dump(users, f, indent=2, ensure_ascii=False)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        users = load_users()
+        if any(u['email'] == email for u in users):
+            return render_template("register.html", error="Email già registrata.")
+        users.append({'email': email, 'password': password})
+        save_users(users)
+        session['user'] = email
+        return redirect(url_for('area_personale'))
+    return render_template("register.html")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        users = load_users()
+        user = next((u for u in users if u['email'] == email and u['password'] == password), None)
+        if user:
+            session['user'] = email
+            return redirect(url_for('area_personale'))
+        return render_template("login.html", error="Credenziali non valide.")
+    return render_template("login.html")
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('home'))
+
+@app.route('/area_personale')
+def area_personale():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template("area_personale.html", user_email=session['user'])
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
