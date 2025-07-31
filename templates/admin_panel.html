@@ -35,7 +35,13 @@
             <option value="funzionale" {% if slot.servizio == "funzionale" %}selected{% endif %}>funzionale</option>
           </select>
         </td>
-        <td><input type="text" name="giorno" value="{{ slot.giorno }}" required /></td>
+        <td>
+          <select name="giorno" required>
+            {% for giorno in ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] %}
+              <option value="{{ giorno }}" {% if slot.giorno == giorno %}selected{% endif %}>{{ giorno }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td><input type="time" name="ora" value="{{ slot.ora }}" required /></td>
         <td>
           <button type="submit" name="action" value="modifica">Modifica</button>
@@ -56,7 +62,16 @@
       </select>
     </label>
     <label> Giorno:
-      <input type="text" name="giorno" placeholder="Es. Lunedì" required />
+      <select name="giorno" required>
+        <option value="">-- seleziona --</option>
+        <option value="Lunedì">Lunedì</option>
+        <option value="Martedì">Martedì</option>
+        <option value="Mercoledì">Mercoledì</option>
+        <option value="Giovedì">Giovedì</option>
+        <option value="Venerdì">Venerdì</option>
+        <option value="Sabato">Sabato</option>
+        <option value="Domenica">Domenica</option>
+      </select>
     </label>
     <label> Ora:
       <input type="time" name="ora" required />
