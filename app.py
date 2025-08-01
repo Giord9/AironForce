@@ -232,10 +232,21 @@ def prenota_slot():
 
     prenotazioni = load_prenotazioni()
 
-    # Verifica che lo slot non sia già prenotato
+    # Verifica se l'utente ha già prenotato questo slot
     for p in prenotazioni:
-        if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora:
-            return {"status": "error", "message": "Slot già prenotato"}, 409
+        if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora and p['email'] == email:
+            return {"status": "error", "message": "Hai già prenotato questo slot."}, 409
+
+    if servizio == 'funzionale':
+        # Conta quante persone hanno già prenotato questo slot
+        count = sum(1 for p in prenotazioni if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
+        if count >= 6:
+            return {"status": "error", "message": "Slot funzionale pieno"}, 409
+    else:
+        # Per 1to1 o coppia: nessuno deve aver prenotato
+        for p in prenotazioni:
+            if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora:
+                return {"status": "error", "message": "Slot già prenotato"}, 409
 
     # Salva la prenotazione
     prenotazioni.append({
@@ -247,6 +258,6 @@ def prenota_slot():
     save_prenotazioni(prenotazioni)
 
     return {"status": "success"}
-
+    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
