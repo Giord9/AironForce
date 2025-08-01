@@ -39,9 +39,9 @@ def chi_siamo():
 @app.route('/servizi/<servizio>')
 def servizio(servizio):
     nomi_servizi = {
-        "PT-1To1": "Allenamento Personal Individuale",
-        "PT-Coppia": "Allenamento Personal di Coppia",
-        "Classe Functional": "Allenamento Funzionale"
+        "1to1": "Allenamento Personal 1to1",
+        "Coppia": "Allenamento Personal di Coppia",
+        "funzionale": "Allenamento Funzionale"
     }
 
     coach_name = "Raffaella Esposito"
