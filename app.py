@@ -45,26 +45,23 @@ def servizio(servizio):
     }
 
     coach_name = "Raffaella Esposito"
-    all_slots = load_slots()
-    prenotazioni = load_prenotazioni()
 
+    all_slots = load_slots()
     filtered_slots = []
     for slot in all_slots:
         if slot['servizio'] == servizio:
-            prenotato = any(
-                p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
-                for p in prenotazioni
-            )
-            stato = "prenotato" if prenotato else "disponibile"
             filtered_slots.append({
                 'giorno': slot['giorno'],
                 'ora': slot['ora'],
                 'coach': coach_name,
-                'stato': stato
+                'stato': slot.get('stato', 'disponibile'),
+                'prenotato_da': slot.get('prenotato_da', None)
             })
 
     nome = nomi_servizi.get(servizio, "Servizio")
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, servizio=servizio)
+    utente_autenticato = 'user_email' in session
+
+    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():

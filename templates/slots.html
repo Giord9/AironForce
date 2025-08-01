@@ -14,21 +14,20 @@
   document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
 
-    // Dati slot: array di oggetti {coach, giorno, ora}
     const slotSet = {{ slot_settimanali | tojson }};
-    console.log("slotSet:", slotSet);
+    const utenteAutenticato = {{ utente_autenticato | tojson }};
 
-    // Raggruppa per giorno della settimana
     const slotsByDay = {};
-
     slotSet.forEach(slot => {
       if (!slotsByDay[slot.giorno]) {
         slotsByDay[slot.giorno] = [];
       }
-      slotsByDay[slot.giorno].push({ora: slot.ora, coach: slot.coach, stato: slot.stato});
+      slotsByDay[slot.giorno].push({
+        ora: slot.ora,
+        coach: slot.coach,
+        stato: slot.stato
+      });
     });
-
-    console.log("slotsByDay:", slotsByDay);
 
     const weekdayMap = {
       "Lunedì": 1,
@@ -42,28 +41,24 @@
 
     const events = [];
 
-    // Crea eventi per ogni slot
     for (let giorno in slotsByDay) {
       let dow = weekdayMap[giorno];
       slotsByDay[giorno].forEach(slot => {
+        const isPrenotato = slot.stato === 'prenotato';
         events.push({
-          title: slot.coach, // Mostra il nome del coach
+          title: isPrenotato ? 'Occupato' : slot.coach,
           startTime: slot.ora,
           endTime: `${String(parseInt(slot.ora.slice(0, 2)) + 1).padStart(2, '0')}:00`,
           daysOfWeek: [dow],
-          backgroundColor: '#28a745',
-          borderColor: '#1e7e34',
+          backgroundColor: isPrenotato ? '#dc3545' : '#28a745',
+          borderColor: isPrenotato ? '#a71d2a' : '#1e7e34',
           display: 'auto',
-          backgroundColor: slot.stato === 'prenotato' ? '#dc3545' : '#28a745',
-          borderColor: slot.stato === 'prenotato' ? '#a71d2a' : '#1e7e34',
-          title: slot.stato === 'prenotato' ? 'Occupato' : slot.coach,
         });
       });
     }
 
-    // Inizializza il calendario FullCalendar
     const calendar = new FullCalendar.Calendar(calendarEl, {
-      locale:'it',
+      locale: 'it',
       initialView: 'timeGridWeek',
       firstDay: 1,
       slotMinTime: "08:00:00",
@@ -76,7 +71,6 @@
         const giorno = giornoSettimana.charAt(0).toUpperCase() + giornoSettimana.slice(1);
         const ora = info.start.toTimeString().slice(0, 5);
 
-        // Controlla se lo slot è occupato
         const occupato = events.some(ev =>
           ev.daysOfWeek.includes(info.start.getDay()) &&
           ev.startTime === ora &&
@@ -85,6 +79,11 @@
 
         if (occupato) {
           alert("Questo slot è già prenotato.");
+          return;
+        }
+
+        if (!utenteAutenticato) {
+          alert("Devi accedere alla tua area personale per prenotare uno slot.");
           return;
         }
 
