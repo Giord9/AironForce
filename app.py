@@ -70,7 +70,8 @@ def servizio(servizio):
             'giorno': slot['giorno'],
             'ora': slot['ora'],
             'coach': coach_name,
-            'stato': stato
+            'stato': stato,
+            'prenotati':len(prenotati)
         })
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user' in session

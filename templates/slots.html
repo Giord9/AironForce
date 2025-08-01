@@ -16,8 +16,8 @@
 
     const slotSet = {{ slot_settimanali | tojson }};
     const utenteAutenticato = {{ 'true' if utente_autenticato else 'false' }};
-    console.log("Utente autenticato?", utenteAutenticato, typeof utenteAutenticato);
-    
+    const servizio = "{{ servizio }}";
+
     const slotsByDay = {};
     slotSet.forEach(slot => {
       if (!slotsByDay[slot.giorno]) {
@@ -26,7 +26,8 @@
       slotsByDay[slot.giorno].push({
         ora: slot.ora,
         coach: slot.coach,
-        stato: slot.stato
+        stato: slot.stato,
+        prenotati: slot.prenotati || 0
       });
     });
 
@@ -45,15 +46,37 @@
     for (let giorno in slotsByDay) {
       let dow = weekdayMap[giorno];
       slotsByDay[giorno].forEach(slot => {
-        const isPrenotato = slot.stato === 'prenotato';
+        let title = "";
+        let bgColor = '#28a745';
+        let borderColor = '#1e7e34';
+
+        if (servizio === 'funzionale') {
+          if (slot.prenotati >= 6) {
+            title = "Occupato (0 posti disponibili)";
+            bgColor = '#dc3545';
+            borderColor = '#a71d2a';
+          } else {
+            const postiDisponibili = 6 - slot.prenotati;
+            title = `Disponibile (${postiDisponibili} posti disponibili)`;
+          }
+        } else {
+          if (slot.stato === 'prenotato') {
+            title = "Occupato";
+            bgColor = '#dc3545';
+            borderColor = '#a71d2a';
+          } else {
+            title = slot.coach;
+          }
+        }
+
         events.push({
-          title: isPrenotato ? 'Occupato' : slot.coach,
+          title: title,
           startTime: slot.ora,
           endTime: `${String(parseInt(slot.ora.slice(0, 2)) + 1).padStart(2, '0')}:00`,
           daysOfWeek: [dow],
-          backgroundColor: isPrenotato ? '#dc3545' : '#28a745',
-          borderColor: isPrenotato ? '#a71d2a' : '#1e7e34',
-          display: 'auto',
+          backgroundColor: bgColor,
+          borderColor: borderColor,
+          display: 'auto'
         });
       });
     }
@@ -66,17 +89,15 @@
       slotMaxTime: "21:00:00",
       allDaySlot: false,
       events: events,
-      // disabilitiamo selectable perché useremo eventClick
       selectable: false,
-      eventClick: function(info) {
-        console.log("Hai cliccato su un evento!", info);
 
+      eventClick: function(info) {
         const evento = info.event;
         const giorno = evento.start.toLocaleDateString('it-IT', { weekday: 'long' });
         const giornoCapitalizzato = giorno.charAt(0).toUpperCase() + giorno.slice(1);
         const ora = evento.start.toTimeString().slice(0, 5);
 
-        if (evento.title === "Occupato") {
+        if (evento.title.startsWith("Occupato")) {
           alert("Questo slot è già prenotato.");
           return;
         }
@@ -92,7 +113,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              servizio: "{{ servizio }}",
+              servizio: servizio,
               giorno: giornoCapitalizzato,
               ora: ora
             })
