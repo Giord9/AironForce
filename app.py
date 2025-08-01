@@ -61,7 +61,7 @@ def servizio(servizio):
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user_email' in session
 
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato)
+    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato,servizio=servizio)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():

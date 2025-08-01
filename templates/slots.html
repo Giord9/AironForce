@@ -89,6 +89,11 @@
 
         const conferma = confirm(`Vuoi prenotare lo slot ${giorno} alle ${ora}?`);
         if (conferma) {
+          console.log("Prenotazione inviata:", {
+            servizio: "{{ servizio }}",
+            giorno: giorno,
+            ora: ora
+          });
           fetch('/prenota_slot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
