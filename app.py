@@ -39,9 +39,9 @@ def chi_siamo():
 @app.route('/servizi/<servizio>')
 def servizio(servizio):
     nomi_servizi = {
-        "1to1": "Allenamento Personal 1to1",
-        "coppia": "Allenamento Personal di Coppia",
-        "funzionale": "Allenamento Funzionale"
+        "PT-1To1": "Allenamento Personal Individuale",
+        "PT-Coppia": "Allenamento Personal di Coppia",
+        "Classe Functional": "Allenamento Funzionale"
     }
 
     coach_name = "Raffaella Esposito"
@@ -258,6 +258,6 @@ def prenota_slot():
     save_prenotazioni(prenotazioni)
 
     return {"status": "success"}
-    
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
