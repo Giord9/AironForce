@@ -67,6 +67,7 @@
       events: events,
       selectable: true,
       select: function(info) {
+        console.log("Hai cliccato su uno slot!", info);
         const giornoSettimana = info.start.toLocaleDateString('it-IT', { weekday: 'long' });
         const giorno = giornoSettimana.charAt(0).toUpperCase() + giornoSettimana.slice(1);
         const ora = info.start.toTimeString().slice(0, 5);
