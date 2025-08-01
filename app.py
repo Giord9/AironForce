@@ -59,7 +59,7 @@ def servizio(servizio):
             })
 
     nome = nomi_servizi.get(servizio, "Servizio")
-    utente_autenticato = 'user_email' in session
+    utente_autenticato = 'user' in session
 
     return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato,servizio=servizio)
 
