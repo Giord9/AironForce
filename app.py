@@ -48,16 +48,30 @@ def servizio(servizio):
 
     all_slots = load_slots()
     filtered_slots = []
-    for slot in all_slots:
-        if slot['servizio'] == servizio:
-            filtered_slots.append({
-                'giorno': slot['giorno'],
-                'ora': slot['ora'],
-                'coach': coach_name,
-                'stato': slot.get('stato', 'disponibile'),
-                'prenotato_da': slot.get('prenotato_da', None)
-            })
+    prenotazioni = load_prenotazioni()
 
+    for slot in all_slots:
+        if slot['servizio'] != servizio:
+            continue
+
+        # Conta prenotazioni per lo slot corrente
+        prenotati = [
+            p for p in prenotazioni
+            if p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
+        ]
+        
+        # Se è "funzionale", può avere fino a 6 prenotati
+        if servizio == 'funzionale':
+            stato = 'prenotato' if len(prenotati) >= 6 else 'disponibile'
+        else:
+            stato = 'prenotato' if prenotati else 'disponibile'
+
+        filtered_slots.append({
+            'giorno': slot['giorno'],
+            'ora': slot['ora'],
+            'coach': coach_name,
+            'stato': stato
+        })
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user' in session
 
