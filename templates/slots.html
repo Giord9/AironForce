@@ -16,7 +16,6 @@
 
     const slotSet = {{ slot_settimanali | tojson }};
     const utenteAutenticato = {{ 'true' if utente_autenticato else 'false' }};
-    console.log("Utente autenticato?", utenteAutenticato, typeof utenteAutenticato);
 
     const slotsByDay = {};
     slotSet.forEach(slot => {
@@ -66,21 +65,17 @@
       slotMaxTime: "21:00:00",
       allDaySlot: false,
       events: events,
-      selectable: true,
-      select: function(info) {
-        console.log("Hai cliccato su uno slot!", info);
+      // disabilitiamo selectable perché useremo eventClick
+      selectable: false,
+      eventClick: function(info) {
+        console.log("Hai cliccato su un evento!", info);
 
-        const giornoSettimana = info.start.toLocaleDateString('it-IT', { weekday: 'long' });
-        const giorno = giornoSettimana.charAt(0).toUpperCase() + giornoSettimana.slice(1);
-        const ora = info.start.toTimeString().slice(0, 5);
+        const evento = info.event;
+        const giorno = evento.start.toLocaleDateString('it-IT', { weekday: 'long' });
+        const giornoCapitalizzato = giorno.charAt(0).toUpperCase() + giorno.slice(1);
+        const ora = evento.start.toTimeString().slice(0, 5);
 
-        const occupato = events.some(ev =>
-          ev.daysOfWeek.includes(info.start.getDay()) &&
-          ev.startTime === ora &&
-          ev.title === "Occupato"
-        );
-
-        if (occupato) {
+        if (evento.title === "Occupato") {
           alert("Questo slot è già prenotato.");
           return;
         }
@@ -90,19 +85,14 @@
           return;
         }
 
-        const conferma = confirm(`Vuoi prenotare lo slot ${giorno} alle ${ora}?`);
+        const conferma = confirm(`Vuoi prenotare lo slot ${giornoCapitalizzato} alle ${ora}?`);
         if (conferma) {
-          console.log("Prenotazione inviata:", {
-            servizio: "{{ servizio }}",
-            giorno: giorno,
-            ora: ora
-          });
           fetch('/prenota_slot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               servizio: "{{ servizio }}",
-              giorno: giorno,
+              giorno: giornoCapitalizzato,
               ora: ora
             })
           }).then(resp => {
