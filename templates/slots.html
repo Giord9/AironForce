@@ -75,28 +75,39 @@
         const giornoSettimana = info.start.toLocaleDateString('it-IT', { weekday: 'long' });
         const giorno = giornoSettimana.charAt(0).toUpperCase() + giornoSettimana.slice(1);
         const ora = info.start.toTimeString().slice(0, 5);
+
+        // Controlla se lo slot è occupato
+        const occupato = events.some(ev =>
+          ev.daysOfWeek.includes(info.start.getDay()) &&
+          ev.startTime === ora &&
+          ev.title === "Occupato"
+        );
+
+        if (occupato) {
+          alert("Questo slot è già prenotato.");
+          return;
+        }
+
         const conferma = confirm(`Vuoi prenotare lo slot ${giorno} alle ${ora}?`);
         if (conferma) {
-            fetch('/prenota_slot', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                servizio: "{{ nome.split(' ')[-1]|lower }}",  // es. '1to1'
-                giorno: giorno,
-                ora: ora
-              })
-            }).then(resp => {
-              if (resp.status === 200) {
-                alert("Prenotazione effettuata con successo!");
-                location.reload();
-              } else if (resp.status === 409) {
-                alert("Questo slot è già stato prenotato.");
-              } else {
-                alert("Errore durante la prenotazione.");
-              }
-            });
+          fetch('/prenota_slot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              servizio: "{{ servizio }}",
+              giorno: giorno,
+              ora: ora
+            })
+          }).then(resp => {
+            if (resp.status === 200) {
+              alert("Prenotazione effettuata con successo!");
+              location.reload();
+            } else if (resp.status === 409) {
+              alert("Questo slot è già stato prenotato.");
+            } else {
+              alert("Errore durante la prenotazione.");
+            }
+          });
         }
       }
     });

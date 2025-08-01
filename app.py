@@ -64,7 +64,7 @@ def servizio(servizio):
             })
 
     nome = nomi_servizi.get(servizio, "Servizio")
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots)
+    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, servizio=servizio)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -191,7 +191,7 @@ def area_personale():
     prenotazioni_utente = [p for p in prenotazioni if p['email'] == user_email]
 
     return render_template("area_personale.html", prenotazioni=prenotazioni_utente, user=user_email)
-    
+
 PRENOTAZIONI_FILE = 'prenotazioni.json'
 
 def load_prenotazioni():
@@ -207,32 +207,34 @@ def save_prenotazioni(data):
 @app.route('/prenota_slot', methods=['POST'])
 def prenota_slot():
     if 'user' not in session:
-        return "Non autorizzato", 403
+        return redirect(url_for('login'))
 
-    data = request.get_json()
-    user_email = session['user']
+    data = request.json
+    email = session['user']
     servizio = data.get('servizio')
     giorno = data.get('giorno')
     ora = data.get('ora')
 
-    if not all([servizio, giorno, ora]):
-        return "Dati mancanti", 400
+    if not (servizio and giorno and ora):
+        return {"status": "error", "message": "Dati incompleti"}, 400
 
     prenotazioni = load_prenotazioni()
-    già_prenotato = any(
-        p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora
-        for p in prenotazioni
-    )
-    if già_prenotato:
-        return "Slot già prenotato", 409
 
+    # Verifica che lo slot non sia già prenotato
+    for p in prenotazioni:
+        if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora:
+            return {"status": "error", "message": "Slot già prenotato"}, 409
+
+    # Salva la prenotazione
     prenotazioni.append({
-        'email': user_email,
+        'email': email,
         'servizio': servizio,
         'giorno': giorno,
         'ora': ora
     })
     save_prenotazioni(prenotazioni)
-    return "Prenotazione effettuata", 200
+
+    return {"status": "success"}
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
