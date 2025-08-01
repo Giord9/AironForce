@@ -184,8 +184,14 @@ def logout():
 def area_personale():
     if 'user' not in session:
         return redirect(url_for('login'))
-    return render_template("area_personale.html", user_email=session['user'])
 
+    user_email = session['user']
+    prenotazioni = load_prenotazioni()
+
+    prenotazioni_utente = [p for p in prenotazioni if p['email'] == user_email]
+
+    return render_template("area_personale.html", prenotazioni=prenotazioni_utente, user=user_email)
+    
 PRENOTAZIONI_FILE = 'prenotazioni.json'
 
 def load_prenotazioni():
