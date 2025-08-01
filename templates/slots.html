@@ -16,7 +16,8 @@
 
     const slotSet = {{ slot_settimanali | tojson }};
     const utenteAutenticato = {{ 'true' if utente_autenticato else 'false' }};
-
+    console.log("Utente autenticato?", utenteAutenticato, typeof utenteAutenticato);
+    
     const slotsByDay = {};
     slotSet.forEach(slot => {
       if (!slotsByDay[slot.giorno]) {
