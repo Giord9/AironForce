@@ -71,11 +71,13 @@ def servizio(servizio):
             'stato': stato,
             'prenotati': count,
             'lista_prenotati': prenotati_list
-        })        
+        }) 
+           
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user' in session
+    is_admin = session.get('admin_logged_in', False)
 
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato,servizio=servizio)
+    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato,servizio=servizio,is_admin=is_admin)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():

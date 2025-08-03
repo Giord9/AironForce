@@ -17,6 +17,7 @@
     const slotSet = {{ slot_settimanali | tojson }};
     const utenteAutenticato = {{ 'true' if utente_autenticato else 'false' }};
     const servizio = "{{ servizio }}";
+    const isAdmin = {{ 'true' if is_admin else 'false' }};
 
     const slotsByDay = {};
     slotSet.forEach(slot => {
@@ -108,7 +109,11 @@
 
         if (servizio === 'funzionale') {
           if (prenotatiList.length > 0) {
-            messaggio += `Prenotati:\n• ${prenotatiList.join('\n• ')}`;
+            if (isAdmin) {
+              messaggio += `Prenotati:\n• ${prenotatiList.join('\n• ')}`;
+            } else {
+              messaggio += `${prenotatiList.length} persone già prenotate.`;
+            }
           } else {
             messaggio += "Nessun partecipante al momento.";
           }
