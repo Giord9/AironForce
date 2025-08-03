@@ -61,4 +61,24 @@
   </label>
   <button type="submit">Aggiungi</button>
 </form>
+
+<h2>Lista Prenotazioni</h2>
+<table>
+  <tr>
+    <th>Email</th>
+    <th>Servizio</th>
+    <th>Giorno</th>
+    <th>Ora</th>
+  </tr>
+  {% for p in prenotazioni %}
+  <tr>
+    <td>{{ p.email }}</td>
+    <td>{{ p.servizio }}</td>
+    <td>{{ p.giorno }}</td>
+    <td>{{ p.ora }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p><a href="{{ url_for('admin_logout') }}">Logout Admin</a></p>
 {% endblock %}

@@ -99,7 +99,8 @@ def admin_logout():
 @admin_required
 def admin_panel():
     slots = load_slots()
-    return render_template("admin_panel.html", slots=slots)
+    prenotazioni = load_prenotazioni()
+    return render_template("admin_panel.html", slots=slots, prenotazioni=prenotazioni)
 
 @app.route('/admin/add_slot', methods=['POST'])
 @admin_required
