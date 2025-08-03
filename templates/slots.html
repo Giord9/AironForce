@@ -27,7 +27,8 @@
         ora: slot.ora,
         coach: slot.coach,
         stato: slot.stato,
-        prenotati: slot.prenotati || 0
+        prenotati: slot.prenotati || 0,
+        lista_prenotati: slot.lista_prenotati || []
       });
     });
 
@@ -76,7 +77,13 @@
           daysOfWeek: [dow],
           backgroundColor: bgColor,
           borderColor: borderColor,
-          display: 'auto'
+          display: 'auto',
+          extendedProps: {
+            giorno: giorno,
+            ora: slot.ora,
+            prenotati: slot.prenotati,
+            lista_prenotati: slot.lista_prenotati
+          }
         });
       });
     }
@@ -93,28 +100,38 @@
 
       eventClick: function(info) {
         const evento = info.event;
-        const giorno = evento.start.toLocaleDateString('it-IT', { weekday: 'long' });
-        const giornoCapitalizzato = giorno.charAt(0).toUpperCase() + giorno.slice(1);
-        const ora = evento.start.toTimeString().slice(0, 5);
+        const giorno = evento.extendedProps.giorno;
+        const ora = evento.extendedProps.ora;
+        const prenotatiList = evento.extendedProps.lista_prenotati || [];
+
+        let messaggio = `Slot: ${giorno} ${ora}\n`;
+
+        if (servizio === 'funzionale') {
+          if (prenotatiList.length > 0) {
+            messaggio += `Prenotati:\n• ${prenotatiList.join('\n• ')}`;
+          } else {
+            messaggio += "Nessun partecipante al momento.";
+          }
+        }
 
         if (evento.title.startsWith("Occupato")) {
-          alert("Questo slot è già prenotato.");
+          alert(messaggio + "\n\nQuesto slot è già al completo.");
           return;
         }
 
         if (!utenteAutenticato) {
-          alert("Devi accedere alla tua area personale per prenotare uno slot.");
+          alert(messaggio + "\n\nDevi accedere alla tua area personale per prenotare uno slot.");
           return;
         }
 
-        const conferma = confirm(`Vuoi prenotare lo slot ${giornoCapitalizzato} alle ${ora}?`);
+        const conferma = confirm(`${messaggio}\n\nVuoi prenotare questo slot?`);
         if (conferma) {
           fetch('/prenota_slot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               servizio: servizio,
-              giorno: giornoCapitalizzato,
+              giorno: giorno,
               ora: ora
             })
           }).then(resp => {

@@ -54,25 +54,24 @@ def servizio(servizio):
         if slot['servizio'] != servizio:
             continue
 
-        # Conta prenotazioni per lo slot corrente
-        prenotati = [
-            p for p in prenotazioni
+        prenotati_list = [
+            p['email'] for p in prenotazioni
             if p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
         ]
-        
-        # Se è "funzionale", può avere fino a 6 prenotati
-        if servizio == 'funzionale':
-            stato = 'prenotato' if len(prenotati) >= 6 else 'disponibile'
-        else:
-            stato = 'prenotato' if prenotati else 'disponibile'
+
+        count = len(prenotati_list)
+
+        # logica stato
+        stato = 'prenotato' if (servizio != 'funzionale' and count > 0) or (servizio == 'funzionale' and count >= 6) else 'disponibile'
 
         filtered_slots.append({
             'giorno': slot['giorno'],
             'ora': slot['ora'],
             'coach': coach_name,
             'stato': stato,
-            'prenotati':len(prenotati)
-        })
+            'prenotati': count,
+            'lista_prenotati': prenotati_list
+        })        
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user' in session
 
