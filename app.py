@@ -65,17 +65,14 @@ def servizio(servizio):
         # logica stato
         stato = 'prenotato' if (servizio != 'funzionale' and count > 0) or (servizio == 'funzionale' and count >= 6) else 'disponibile'
 
-        slot_data = {
+        filtered_slots.append({
           'giorno': slot['giorno'],
           'ora': slot['ora'],
           'coach': coach_name,
           'stato': stato,
-          'prenotati': count
-        }
-        if is_admin:
-          slot_data['lista_prenotati'] = prenotati_list
-
-        filtered_slots.append(slot_data)   
+          'prenotati': count,
+          'lista_prenotati': prenotati_list if is_admin else None  # 👈 cambiato da [] a None
+        })   
     nome = nomi_servizi.get(servizio, "Servizio")
     utente_autenticato = 'user' in session
 
