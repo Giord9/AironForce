@@ -29,7 +29,7 @@
         coach: slot.coach,
         stato: slot.stato,
         prenotati: slot.prenotati || 0,
-        lista_prenotati: slot.lista_prenotati || []
+        lista_prenotati: slot.lista_prenotati !== undefined ? slot.lista_prenotati : null
       });
     });
 
@@ -103,17 +103,13 @@
         const evento = info.event;
         const giorno = evento.extendedProps.giorno;
         const ora = evento.extendedProps.ora;
-        const prenotatiList = evento.extendedProps.lista_prenotati || [];
+        const prenotatiList = evento.extendedProps.lista_prenotati;
 
         let messaggio = `Slot: ${giorno} ${ora}\n`;
 
-        if (servizio === 'funzionale') {
+        if (isAdmin && prenotatiList) {
           if (prenotatiList.length > 0) {
-            if (isAdmin) {
-              messaggio += `Prenotati:\n• ${prenotatiList.join('\n• ')}`;
-            } else {
-              messaggio += `${prenotatiList.length} persone già prenotate.`;
-            }
+            messaggio += `Prenotati:\n• ${prenotatiList.join('\n• ')}`;
           } else {
             messaggio += "Nessun partecipante al momento.";
           }
