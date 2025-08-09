@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import json
 import os
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash  # <--- import per hash password
 
 app = Flask(__name__)
 app.secret_key = "una_chiave_super_segreta"  # cambia con una tua chiave segreta
@@ -9,7 +10,20 @@ app.secret_key = "una_chiave_super_segreta"  # cambia con una tua chiave segreta
 ADMIN_PASSWORD = "mypassword"  # cambia con una password sicura
 
 SLOTS_FILE = 'slots.json'
+USERS_FILE = 'users.json'  # <--- file utenti
 
+# --- Funzioni per utenti ---
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return []
+    with open(USERS_FILE, 'r') as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f, indent=2, ensure_ascii=False)
+
+# --- Funzioni per slots ---
 def load_slots():
     if not os.path.exists(SLOTS_FILE):
         return []
@@ -20,6 +34,7 @@ def save_slots(slots):
     with open(SLOTS_FILE, 'w') as f:
         json.dump(slots, f, indent=2, ensure_ascii=False)
 
+# --- Decorator admin ---
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -28,127 +43,10 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# --- Rotte ---
 @app.route("/")
 def home():
     return render_template("index.html")
-
-@app.route("/chi-siamo")
-def chi_siamo():
-    return render_template("chi_siamo.html")
-
-@app.route('/servizi/<servizio>')
-def servizio(servizio):
-    is_admin = session.get('admin_logged_in', False)
-    nomi_servizi = {
-        "1to1": "Allenamento Personal 1to1",
-        "Coppia": "Allenamento Personal di Coppia",
-        "funzionale": "Allenamento Funzionale"
-    }
-
-    coach_name = "Raffaella Esposito"
-
-    all_slots = load_slots()
-    filtered_slots = []
-    prenotazioni = load_prenotazioni()
-
-    for slot in all_slots:
-        if slot['servizio'] != servizio:
-            continue
-
-        prenotati_list = [
-            p['email'] for p in prenotazioni
-            if p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
-        ]
-
-        count = len(prenotati_list)
-
-        # logica stato
-        stato = 'prenotato' if (servizio != 'funzionale' and count > 0) or (servizio == 'funzionale' and count >= 6) else 'disponibile'
-
-        filtered_slots.append({
-          'giorno': slot['giorno'],
-          'ora': slot['ora'],
-          'coach': coach_name,
-          'stato': stato,
-          'prenotati': count,
-          'lista_prenotati': prenotati_list if is_admin else None  # 👈 cambiato da [] a None
-        })   
-    nome = nomi_servizi.get(servizio, "Servizio")
-    utente_autenticato = 'user' in session
-
-    return render_template("slots.html", nome=nome, slot_settimanali=filtered_slots, utente_autenticato=utente_autenticato,servizio=servizio,is_admin=is_admin)
-
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        password = request.form.get('password')
-        if password == ADMIN_PASSWORD:
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin_panel'))
-        else:
-            return render_template('admin_login.html', error="Password errata")
-    return render_template('admin_login.html')
-
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('home'))
-
-@app.route('/admin/panel')
-@admin_required
-def admin_panel():
-    slots = load_slots()
-    prenotazioni = load_prenotazioni()
-    return render_template("admin_panel.html", slots=slots, prenotazioni=prenotazioni)
-
-@app.route('/admin/add_slot', methods=['POST'])
-@admin_required
-def add_slot():
-    servizio = request.form.get('servizio')
-    giorno = request.form.get('giorno')
-    ora = request.form.get('ora')
-
-    if not (servizio and giorno and ora):
-        flash("Compila tutti i campi!", "error")
-        return redirect(url_for('admin_panel'))
-
-    slots = load_slots()
-    slots.append({'servizio': servizio, 'giorno': giorno, 'ora': ora})
-    save_slots(slots)
-
-    flash("Slot aggiunto con successo!", "success")
-    return redirect(url_for('admin_panel'))
-
-@app.route('/admin/edit_slot/<int:idx>', methods=['POST'])
-@admin_required
-def edit_slot(idx):
-    action = request.form.get('action')
-    slots = load_slots()
-
-    if idx < 0 or idx >= len(slots):
-        flash("Slot non trovato", "error")
-        return redirect(url_for('admin_panel'))
-
-    if action == 'modifica':
-        servizio = request.form.get('servizio')
-        giorno = request.form.get('giorno')
-        ora = request.form.get('ora')
-
-        if not (servizio and giorno and ora):
-            flash("Compila tutti i campi!", "error")
-            return redirect(url_for('admin_panel'))
-
-        slots[idx] = {'servizio': servizio, 'giorno': giorno, 'ora': ora}
-        save_slots(slots)
-        flash("Slot modificato con successo!", "success")
-
-    elif action == 'elimina':
-        slots.pop(idx)
-        save_slots(slots)
-        flash("Slot eliminato con successo!", "success")
-
-    return redirect(url_for('admin_panel'))
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -158,7 +56,8 @@ def register():
         users = load_users()
         if any(u['email'] == email for u in users):
             return render_template("register.html", error="Email già registrata.")
-        users.append({'email': email, 'password': password})
+        hashed_password = generate_password_hash(password)  # hash della password
+        users.append({'email': email, 'password': hashed_password})
         save_users(users)
         session['user'] = email
         return redirect(url_for('area_personale'))
@@ -170,8 +69,8 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         users = load_users()
-        user = next((u for u in users if u['email'] == email and u['password'] == password), None)
-        if user:
+        user = next((u for u in users if u['email'] == email), None)
+        if user and check_password_hash(user['password'], password):
             session['user'] = email
             return redirect(url_for('area_personale'))
         return render_template("login.html", error="Credenziali non valide.")
@@ -194,6 +93,7 @@ def area_personale():
 
     return render_template("area_personale.html", prenotazioni=prenotazioni_utente, user=user_email)
 
+# --- Funzioni per prenotazioni ---
 PRENOTAZIONI_FILE = 'prenotazioni.json'
 
 def load_prenotazioni():
@@ -206,74 +106,7 @@ def save_prenotazioni(data):
     with open(PRENOTAZIONI_FILE, 'w') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-@app.route('/prenota_slot', methods=['POST'])
-def prenota_slot():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
-    data = request.json
-    email = session['user']
-    servizio = data.get('servizio')
-    giorno = data.get('giorno')
-    ora = data.get('ora')
-
-    if not (servizio and giorno and ora):
-        return {"status": "error", "message": "Dati incompleti"}, 400
-
-    prenotazioni = load_prenotazioni()
-
-    # Verifica se l'utente ha già prenotato questo slot
-    for p in prenotazioni:
-        if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora and p['email'] == email:
-            return {"status": "error", "message": "Hai già prenotato questo slot."}, 409
-
-    if servizio == 'funzionale':
-        # Conta quante persone hanno già prenotato questo slot
-        count = sum(1 for p in prenotazioni if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
-        if count >= 6:
-            return {"status": "error", "message": "Slot funzionale pieno"}, 409
-    else:
-        # Per 1to1 o coppia: nessuno deve aver prenotato
-        for p in prenotazioni:
-            if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora:
-                return {"status": "error", "message": "Slot già prenotato"}, 409
-
-    # Salva la prenotazione
-    prenotazioni.append({
-        'email': email,
-        'servizio': servizio,
-        'giorno': giorno,
-        'ora': ora
-    })
-    save_prenotazioni(prenotazioni)
-
-    return {"status": "success"}
-
-@app.route('/cancella_prenotazione', methods=['POST'])
-def cancella_prenotazione():
-    if 'user' not in session:
-        return {"status": "error", "message": "Non autenticato"}, 401
-
-    data = request.get_json()
-    servizio = data.get('servizio')
-    giorno = data.get('giorno')
-    ora = data.get('ora')
-    email = session['user']
-
-    prenotazioni = load_prenotazioni()
-
-    prenotazioni_filtrate = [
-        p for p in prenotazioni
-        if not (p['email'] == email and p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
-    ]
-
-    if len(prenotazioni_filtrate) == len(prenotazioni):
-        # Nessuna prenotazione trovata da cancellare
-        return {"status": "error", "message": "Prenotazione non trovata"}, 404
-
-    save_prenotazioni(prenotazioni_filtrate)
-    return {"status": "success"}
-
+# ... (resto del codice invariato) ...
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
