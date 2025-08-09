@@ -149,36 +149,6 @@ def edit_slot(idx):
 
     return redirect(url_for('admin_panel'))
 
-@app.route('/cancella_prenotazione', methods=['POST'])
-def cancella_prenotazione():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
-    email = session['user']
-    servizio = request.form.get('servizio')
-    giorno = request.form.get('giorno')
-    ora = request.form.get('ora')
-
-    prenotazioni = load_prenotazioni()
-    nuove_prenotazioni = [
-        p for p in prenotazioni
-        if not (p['email'] == email and p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
-    ]
-
-    save_prenotazioni(nuove_prenotazioni)
-    flash("Prenotazione cancellata con successo.")
-    return redirect(url_for('area_personale'))
-  # --- Gestione utenti ---
-
-def load_users():
-    if not os.path.exists("users.json"):
-        return []
-    with open("users.json", "r") as f:
-        return json.load(f)
-
-def save_users(users):
-    with open("users.json", "w") as f:
-        json.dump(users, f, indent=2, ensure_ascii=False)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
