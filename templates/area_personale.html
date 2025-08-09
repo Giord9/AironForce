@@ -1,37 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}Area Personale{% endblock %}
+
 {% block content %}
 <h1>Benvenuto, {{ user }}</h1>
 
-<!-- 🔽 QUI il blocco dei messaggi flash -->
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul>
-      {% for msg in messages %}
-        <li>{{ msg }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-
-<!-- 🔽 Poi segue la lista delle prenotazioni -->
 <h2>Le tue prenotazioni</h2>
+
 {% if prenotazioni %}
   <ul>
     {% for p in prenotazioni %}
       <li>
         {{ p.servizio }} - {{ p.giorno }} alle {{ p.ora }}
-        <form method="POST" action="{{ url_for('cancella_prenotazione') }}" style="display:inline;">
-          <input type="hidden" name="servizio" value="{{ p.servizio }}">
-          <input type="hidden" name="giorno" value="{{ p.giorno }}">
-          <input type="hidden" name="ora" value="{{ p.ora }}">
-          <button type="submit" onclick="return confirm('Sei sicuro di voler cancellare questa prenotazione?')">Cancella</button>
-        </form>
+        <button class="btn-cancella" data-servizio="{{ p.servizio }}" data-giorno="{{ p.giorno }}" data-ora="{{ p.ora }}">Cancella</button>
       </li>
     {% endfor %}
   </ul>
 {% else %}
-  <p>Non hai ancora prenotato nessun allenamento.</p>
+  <p>Non hai prenotazioni.</p>
 {% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.btn-cancella').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Sei sicuro di voler cancellare questa prenotazione?')) {
+          fetch('/cancella_prenotazione', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              servizio: btn.dataset.servizio,
+              giorno: btn.dataset.giorno,
+              ora: btn.dataset.ora
+            })
+          }).then(resp => {
+            if (resp.ok) {
+              alert('Prenotazione cancellata con successo.');
+              location.reload();
+            } else {
+              alert('Errore durante la cancellazione.');
+            }
+          });
+        }
+      });
+    });
+  });
+</script>
 
 {% endblock %}

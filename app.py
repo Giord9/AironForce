@@ -279,5 +279,31 @@ def prenota_slot():
 
     return {"status": "success"}
 
+@app.route('/cancella_prenotazione', methods=['POST'])
+def cancella_prenotazione():
+    if 'user' not in session:
+        return {"status": "error", "message": "Non autenticato"}, 401
+
+    data = request.get_json()
+    servizio = data.get('servizio')
+    giorno = data.get('giorno')
+    ora = data.get('ora')
+    email = session['user']
+
+    prenotazioni = load_prenotazioni()
+
+    prenotazioni_filtrate = [
+        p for p in prenotazioni
+        if not (p['email'] == email and p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
+    ]
+
+    if len(prenotazioni_filtrate) == len(prenotazioni):
+        # Nessuna prenotazione trovata da cancellare
+        return {"status": "error", "message": "Prenotazione non trovata"}, 404
+
+    save_prenotazioni(prenotazioni_filtrate)
+    return {"status": "success"}
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
