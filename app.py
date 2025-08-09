@@ -1,112 +1,94 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session
 import json
 import os
-from functools import wraps
-from werkzeug.security import generate_password_hash, check_password_hash  # <--- import per hash password
 
 app = Flask(__name__)
-app.secret_key = "una_chiave_super_segreta"  # cambia con una tua chiave segreta
+app.secret_key = "supersegreto"  # Cambialo in produzione
 
-ADMIN_PASSWORD = "mypassword"  # cambia con una password sicura
+USERS_FILE = "users.json"
 
-SLOTS_FILE = 'slots.json'
-USERS_FILE = 'users.json'  # <--- file utenti
-
-# --- Funzioni per utenti ---
+# Funzioni per gestione utenti
 def load_users():
-    if not os.path.exists(USERS_FILE):
-        return []
-    with open(USERS_FILE, 'r') as f:
-        return json.load(f)
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
+    return []
 
 def save_users(users):
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f, indent=2, ensure_ascii=False)
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f)
 
-# --- Funzioni per slots ---
-def load_slots():
-    if not os.path.exists(SLOTS_FILE):
-        return []
-    with open(SLOTS_FILE, 'r') as f:
-        return json.load(f)
-
-def save_slots(slots):
-    with open(SLOTS_FILE, 'w') as f:
-        json.dump(slots, f, indent=2, ensure_ascii=False)
-
-# --- Decorator admin ---
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('admin_logged_in'):
-            return redirect(url_for('admin_login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# --- Rotte ---
-@app.route("/")
+# Rotta home
+@app.route('/')
 def home():
     return render_template("index.html")
 
+# Registrazione
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         users = load_users()
+
         if any(u['email'] == email for u in users):
             return render_template("register.html", error="Email già registrata.")
-        hashed_password = generate_password_hash(password)  # hash della password
-        users.append({'email': email, 'password': hashed_password})
+
+        users.append({'email': email, 'password': password})
         save_users(users)
         session['user'] = email
         return redirect(url_for('area_personale'))
+
     return render_template("register.html")
 
+# Login utente
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         users = load_users()
-        user = next((u for u in users if u['email'] == email), None)
-        if user and check_password_hash(user['password'], password):
-            session['user'] = email
-            return redirect(url_for('area_personale'))
-        return render_template("login.html", error="Credenziali non valide.")
+
+        for u in users:
+            if u['email'] == email and u['password'] == password:
+                session['user'] = email
+                return redirect(url_for('area_personale'))
+        return render_template("login.html", error="Credenziali errate.")
+
     return render_template("login.html")
 
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect(url_for('home'))
-
+# Area personale
 @app.route('/area_personale')
 def area_personale():
     if 'user' not in session:
         return redirect(url_for('login'))
+    return render_template("area_personale.html", user=session['user'])
 
-    user_email = session['user']
-    prenotazioni = load_prenotazioni()
+# Logout
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    session.pop('admin', None)
+    return redirect(url_for('home'))
 
-    prenotazioni_utente = [p for p in prenotazioni if p['email'] == user_email]
+# Login admin
+@app.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == "admin123":  # Cambiala in produzione
+            session['admin'] = True
+            return redirect(url_for('area_admin'))
+        else:
+            return render_template("admin_login.html", error="Password errata.")
+    return render_template("admin_login.html")
 
-    return render_template("area_personale.html", prenotazioni=prenotazioni_utente, user=user_email)
-
-# --- Funzioni per prenotazioni ---
-PRENOTAZIONI_FILE = 'prenotazioni.json'
-
-def load_prenotazioni():
-    if not os.path.exists(PRENOTAZIONI_FILE):
-        return []
-    with open(PRENOTAZIONI_FILE, 'r') as f:
-        return json.load(f)
-
-def save_prenotazioni(data):
-    with open(PRENOTAZIONI_FILE, 'w') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-# ... (resto del codice invariato) ...
+# Area admin
+@app.route('/area_admin')
+def area_admin():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    return "<h1>Benvenuto nell'area admin!</h1>"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    app.run(debug=True)
