@@ -14,9 +14,11 @@ def ensure_admin_flag():
         session['admin_logged_in'] = False
 
 ADMIN_PASSWORD = "mypassword"  # Cambia in produzione con una password sicura
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+app.debug = True
+app.config['DEBUG'] = True
+app.config['ENV'] = 'development'
 # DB config
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
