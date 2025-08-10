@@ -60,6 +60,15 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def mask_email(email):
+    """Oscura parte dell'email per privacy."""
+    nome, dominio = email.split('@')
+    if len(nome) > 2:
+        nome = nome[0] + '*'*(len(nome)-2) + nome[-1]
+    else:
+        nome = nome[0] + '*'
+    return nome + '@' + dominio
+
 
 # ==============================
 #  ROTTE PUBBLICHE (visibili a tutti)
@@ -99,18 +108,23 @@ def servizio(servizio):
             p['email'] for p in prenotazioni
             if p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
         ]
+
         count = len(prenotati_list)
 
-        # Determina stato slot
+        # logica stato
         stato = 'prenotato' if (servizio != 'funzionale' and count > 0) or (servizio == 'funzionale' and count >= 6) else 'disponibile'
 
+        # Se l'utente NON è admin, oscura le email
+        if not is_admin:
+            prenotati_list = [mask_email(email) for email in prenotati_list]
+
         filtered_slots.append({
-            'giorno': slot['giorno'],
-            'ora': slot['ora'],
-            'coach': coach_name,
-            'stato': stato,
-            'prenotati': count,
-            'lista_prenotati': prenotati_list if is_admin else None
+          'giorno': slot['giorno'],
+          'ora': slot['ora'],
+          'coach': coach_name,
+          'stato': stato,
+          'prenotati': count,
+          'lista_prenotati': prenotati_list
         })
 
     nome = nomi_servizi.get(servizio, "Servizio")
