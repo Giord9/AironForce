@@ -6,7 +6,7 @@
   <label>Email:</label>
   <input type="email" name="email" required /><br />
   <label>Password:</label>
-  <input type="password" name="password" required /><br />
+  <input type="password" name="password" required  autocomplete="email" autocomplete="current-password"/><br />
   {% if error %}
     <p style="color:red;">{{ error }}</p>
   {% endif %}

@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import json
 import os
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = "supersegreto"  # Cambia in produzione
@@ -14,9 +16,36 @@ def ensure_admin_flag():
 ADMIN_PASSWORD = "mypassword"  # Cambia in produzione con una password sicura
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-USERS_FILE = os.path.join(BASE_DIR, "users.json")
-SLOTS_FILE = os.path.join(BASE_DIR,"slots.json")
-PRENOTAZIONI_FILE = os.path.join(BASE_DIR,"prenotazioni.json")
+
+# DB config
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'app.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# =========================
+# MODELS
+# =========================
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+
+class Prenotazione(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    servizio = db.Column(db.String(50), nullable=False)
+    giorno = db.Column(db.String(20), nullable=False)
+    ora = db.Column(db.String(10), nullable=False)
+    user = db.relationship('User', backref=db.backref('prenotazioni', lazy=True))
+
+# =========================
+# FILES (ancora usati per slot)
+# =========================
+SLOTS_FILE = os.path.join(BASE_DIR, "slots.json")
+# (users/prenotazioni JSON non sono più necessari dopo migrazione, ma li teniamo per la migrazione)
+
+
 
 # ==============================
 #  FUNZIONI UTILI (utility functions)
@@ -34,32 +63,6 @@ def save_slots(slots):
     with open(SLOTS_FILE, 'w') as f:
         json.dump(slots, f, indent=2, ensure_ascii=False)
 
-def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, "r") as f:
-            users = json.load(f)
-            print(f"DEBUG: Caricati utenti: {users}")
-            return users
-    print("DEBUG: Nessun file users.json trovato, ritorno lista vuota")
-    return []
-
-def save_users(users):
-    """Salva gli utenti registrati"""
-    print(f"DEBUG: Salvo utenti: {users}")
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f,indent=2)
-
-def load_prenotazioni():
-    """Carica le prenotazioni dal file"""
-    if not os.path.exists(PRENOTAZIONI_FILE):
-        return []
-    with open(PRENOTAZIONI_FILE, 'r') as f:
-        return json.load(f)
-
-def save_prenotazioni(data):
-    """Salva le prenotazioni sul file"""
-    with open(PRENOTAZIONI_FILE, 'w') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
 
 def admin_required(f):
     """Decorator per permettere accesso solo ad admin"""
@@ -78,6 +81,37 @@ def mask_email(email):
     else:
         nome = nome[0] + '*'
     return nome + '@' + dominio
+
+
+# def migrate_json_to_db():
+#     # Migrazione utenti
+#     users = load_users()
+#     for u in users:
+#         if not User.query.filter_by(email=u['email']).first():
+#             nuovo_user = User(email=u['email'], password=u['password'])
+#             db.session.add(nuovo_user)
+
+#     # Migrazione slot
+#     slots = load_slots()
+#     for s in slots:
+#         if not Slot.query.filter_by(servizio=s['servizio'], giorno=s['giorno'], ora=s['ora']).first():
+#             nuovo_slot = Slot(servizio=s['servizio'], giorno=s['giorno'], ora=s['ora'])
+#             db.session.add(nuovo_slot)
+
+#     # Migrazione prenotazioni
+#     prenotazioni = load_prenotazioni()
+#     for p in prenotazioni:
+#         if not Prenotazione.query.filter_by(email=p['email'], servizio=p['servizio'], giorno=p['giorno'], ora=p['ora']).first():
+#             nuova_prenotazione = Prenotazione(
+#                 email=p['email'],
+#                 servizio=p['servizio'],
+#                 giorno=p['giorno'],
+#                 ora=p['ora']
+#             )
+#             db.session.add(nuova_prenotazione)
+
+#     db.session.commit()
+#     print("✅ Migrazione completata!")
 
 
 # ==============================
@@ -106,19 +140,24 @@ def servizio(servizio):
     }
 
     coach_name = "Raffaella Esposito"
+
+    # Carica tutti gli slot dal file JSON (che hai detto rimane per gli slot)
     all_slots = load_slots()
-    prenotazioni = load_prenotazioni()
+
     filtered_slots = []
 
     for slot in all_slots:
         if slot['servizio'] != servizio:
             continue
 
-        prenotati_list = [
-            p['email'] for p in prenotazioni
-            if p['servizio'] == servizio and p['giorno'] == slot['giorno'] and p['ora'] == slot['ora']
-        ]
+        # Query per prendere le prenotazioni di questo slot dal DB
+        prenotati_query = Prenotazione.query.filter_by(
+            servizio=servizio,
+            giorno=slot['giorno'],
+            ora=slot['ora']
+        ).all()
 
+        prenotati_list = [p.user.email for p in prenotati_query]
         count = len(prenotati_list)
 
         # logica stato
@@ -129,12 +168,12 @@ def servizio(servizio):
             prenotati_list = [mask_email(email) for email in prenotati_list]
 
         filtered_slots.append({
-          'giorno': slot['giorno'],
-          'ora': slot['ora'],
-          'coach': coach_name,
-          'stato': stato,
-          'prenotati': count,
-          'lista_prenotati': prenotati_list
+            'giorno': slot['giorno'],
+            'ora': slot['ora'],
+            'coach': coach_name,
+            'stato': stato,
+            'prenotati': count,
+            'lista_prenotati': prenotati_list
         })
 
     nome = nomi_servizi.get(servizio, "Servizio")
@@ -153,17 +192,23 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        users = load_users()
 
-        if any(u['email'] == email for u in users):
+        # Controlla se esiste già un utente con questa email
+        if User.query.filter_by(email=email).first():
             return render_template("register.html", error="Email già registrata.")
 
-        users.append({'email': email, 'password': password})
-        save_users(users)
+        # Crea nuovo utente con password hashata
+        password_hash = generate_password_hash(password)
+        nuovo_user = User(email=email, password_hash=password_hash)
+        db.session.add(nuovo_user)
+        db.session.commit()
+
+        # Salva sessione
         session['user'] = email
         return redirect(url_for('area_personale'))
 
     return render_template("register.html")
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -171,12 +216,12 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        users = load_users()
 
-        for u in users:
-            if u['email'] == email and u['password'] == password:
-                session['user'] = email
-                return redirect(url_for('area_personale'))
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password_hash, password):
+            session['user'] = email
+            return redirect(url_for('area_personale'))
+
         return render_template("login.html", error="Credenziali errate.")
 
     return render_template("login.html")
@@ -194,7 +239,13 @@ def area_personale():
         return redirect(url_for('login'))
 
     user_email = session['user']
-    prenotazioni_utente = [p for p in load_prenotazioni() if p['email'] == user_email]
+    user = User.query.filter_by(email=user_email).first()
+    if not user:
+        # Se per qualche motivo l'utente non esiste nel DB, logout forzato
+        session.pop('user', None)
+        return redirect(url_for('login'))
+
+    prenotazioni_utente = Prenotazione.query.filter_by(user_id=user.id).all()
 
     return render_template("area_personale.html", prenotazioni=prenotazioni_utente, user=user_email)
 
@@ -218,23 +269,29 @@ def prenota_slot():
     if not (servizio and giorno and ora):
         return {"status": "error", "message": "Dati incompleti"}, 400
 
-    prenotazioni = load_prenotazioni()
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return {"status": "error", "message": "Utente non trovato"}, 404
 
     # Controlli di disponibilità
     if servizio == 'funzionale':
-        if sum(1 for p in prenotazioni if p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora) >= 6:
+        count = Prenotazione.query.filter_by(servizio=servizio, giorno=giorno, ora=ora).count()
+        if count >= 6:
             return {"status": "error", "message": "Slot funzionale pieno"}, 409
     else:
-        if any(p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora for p in prenotazioni):
+        exists = Prenotazione.query.filter_by(servizio=servizio, giorno=giorno, ora=ora).first()
+        if exists:
             return {"status": "error", "message": "Slot già prenotato"}, 409
 
     # Verifica prenotazione doppia per stesso utente
-    if any(p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora and p['email'] == email for p in prenotazioni):
+    doppia = Prenotazione.query.filter_by(servizio=servizio, giorno=giorno, ora=ora, user_id=user.id).first()
+    if doppia:
         return {"status": "error", "message": "Hai già prenotato questo slot."}, 409
 
     # Salva prenotazione
-    prenotazioni.append({'email': email, 'servizio': servizio, 'giorno': giorno, 'ora': ora})
-    save_prenotazioni(prenotazioni)
+    nuova_prenotazione = Prenotazione(user_id=user.id, servizio=servizio, giorno=giorno, ora=ora)
+    db.session.add(nuova_prenotazione)
+    db.session.commit()
 
     return {"status": "success"}
 
@@ -243,26 +300,29 @@ def cancella_prenotazione():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    data = request.json  # <-- qui prendi il JSON
+    data = request.json
     email = session['user']
     servizio = data.get('servizio')
     giorno = data.get('giorno')
     ora = data.get('ora')
 
-    print(f"DEBUG: Cancella prenotazione chiamata con servizio={servizio}, giorno={giorno}, ora={ora}, email={email}")
-    prenotazioni = load_prenotazioni()
-    print(f"DEBUG: Prenotazioni prima della cancellazione: {prenotazioni}")
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return {"status": "error", "message": "Utente non trovato"}, 404
 
-    nuove_prenotazioni = [
-        p for p in prenotazioni
-        if not (p['email'] == email and p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
-    ]
+    prenotazione = Prenotazione.query.filter_by(
+        user_id=user.id,
+        servizio=servizio,
+        giorno=giorno,
+        ora=ora
+    ).first()
 
-    save_prenotazioni(nuove_prenotazioni)
-    print(f"DEBUG: Nuove prenotazioni dopo il filtro: {nuove_prenotazioni}")
-
-    return '', 200  # Rispondi senza redirect perché è una chiamata fetch
-
+    if prenotazione:
+        db.session.delete(prenotazione)
+        db.session.commit()
+        return '', 200
+    else:
+        return {"status": "error", "message": "Prenotazione non trovata"}, 404
 
 # ==============================
 #  AREA ADMIN
@@ -290,7 +350,10 @@ def admin_logout():
 @admin_required
 def admin_panel():
     """Dashboard admin con lista slot e prenotazioni"""
-    return render_template("admin_panel.html", slots=load_slots(), prenotazioni=load_prenotazioni())
+    prenotazioni = Prenotazione.query.all()
+    return render_template("admin_panel.html", slots=load_slots(), prenotazioni=prenotazioni)
+
+
 
 @app.route('/admin/add_slot', methods=['POST'])
 @admin_required
@@ -346,4 +409,7 @@ def edit_slot(idx):
 #  AVVIO APP
 # ==============================
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        #migrate_json_to_db()  # Esegui una sola volta, poi puoi commentarla
     app.run(debug=True)

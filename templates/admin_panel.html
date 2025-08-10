@@ -45,7 +45,7 @@
   <label>Servizio:
     <select name="servizio" required>
       <option value="1to1">1to1</option>
-      <option value="coppia">coppia</option>
+      <option value="Coppia">coppia</option>
       <option value="funzionale">funzionale</option>
     </select>
   </label>
@@ -72,7 +72,7 @@
   </tr>
   {% for p in prenotazioni %}
   <tr>
-    <td>{{ p.email }}</td>
+    <td>{{ p.user.email }}</td>
     <td>{{ p.servizio }}</td>
     <td>{{ p.giorno }}</td>
     <td>{{ p.ora }}</td>
