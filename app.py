@@ -12,9 +12,11 @@ def ensure_admin_flag():
         session['admin_logged_in'] = False
 
 ADMIN_PASSWORD = "mypassword"  # Cambia in produzione con una password sicura
-SLOTS_FILE = 'slots.json'
-USERS_FILE = "users.json"
-PRENOTAZIONI_FILE = 'prenotazioni.json'
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USERS_FILE = os.path.join(BASE_DIR, "users.json")
+SLOTS_FILE = os.path.join(BASE_DIR,"slots.json")
+PRENOTAZIONI_FILE = os.path.join(BASE_DIR,"prenotazioni.json")
 
 # ==============================
 #  FUNZIONI UTILI (utility functions)
@@ -33,16 +35,19 @@ def save_slots(slots):
         json.dump(slots, f, indent=2, ensure_ascii=False)
 
 def load_users():
-    """Carica gli utenti registrati"""
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, "r") as f:
-            return json.load(f)
+            users = json.load(f)
+            print(f"DEBUG: Caricati utenti: {users}")
+            return users
+    print("DEBUG: Nessun file users.json trovato, ritorno lista vuota")
     return []
 
 def save_users(users):
     """Salva gli utenti registrati"""
+    print(f"DEBUG: Salvo utenti: {users}")
     with open(USERS_FILE, "w") as f:
-        json.dump(users, f)
+        json.dump(users, f,indent=2)
 
 def load_prenotazioni():
     """Carica le prenotazioni dal file"""
