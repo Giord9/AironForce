@@ -235,23 +235,28 @@ def prenota_slot():
 
 @app.route('/cancella_prenotazione', methods=['POST'])
 def cancella_prenotazione():
-    """Cancella una prenotazione dell'utente"""
     if 'user' not in session:
         return redirect(url_for('login'))
 
+    data = request.json  # <-- qui prendi il JSON
     email = session['user']
-    servizio = request.form.get('servizio')
-    giorno = request.form.get('giorno')
-    ora = request.form.get('ora')
+    servizio = data.get('servizio')
+    giorno = data.get('giorno')
+    ora = data.get('ora')
+
+    print(f"DEBUG: Cancella prenotazione chiamata con servizio={servizio}, giorno={giorno}, ora={ora}, email={email}")
+    prenotazioni = load_prenotazioni()
+    print(f"DEBUG: Prenotazioni prima della cancellazione: {prenotazioni}")
 
     nuove_prenotazioni = [
-        p for p in load_prenotazioni()
+        p for p in prenotazioni
         if not (p['email'] == email and p['servizio'] == servizio and p['giorno'] == giorno and p['ora'] == ora)
     ]
 
     save_prenotazioni(nuove_prenotazioni)
-    flash("Prenotazione cancellata con successo.")
-    return redirect(url_for('area_personale'))
+    print(f"DEBUG: Nuove prenotazioni dopo il filtro: {nuove_prenotazioni}")
+
+    return '', 200  # Rispondi senza redirect perché è una chiamata fetch
 
 
 # ==============================
