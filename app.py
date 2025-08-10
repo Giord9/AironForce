@@ -6,6 +6,11 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = "supersegreto"  # Cambia in produzione
 
+@app.before_request
+def ensure_admin_flag():
+    if 'admin_logged_in' not in session:
+        session['admin_logged_in'] = False
+
 ADMIN_PASSWORD = "mypassword"  # Cambia in produzione con una password sicura
 SLOTS_FILE = 'slots.json'
 USERS_FILE = "users.json"
