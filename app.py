@@ -222,6 +222,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
             session['user'] = email
+            session['admin_logged_in'] = False  # forza disattivazione admin
             return redirect(url_for('area_personale'))
 
         return render_template("login.html", error="Credenziali errate.")
@@ -232,6 +233,7 @@ def login():
 def logout():
     """Logout utente"""
     session.pop('user', None)
+    session['admin_logged_in'] = False
     return redirect(url_for('home'))
 
 @app.route('/area_personale')
@@ -346,6 +348,7 @@ def admin_login():
 def admin_logout():
     """Logout admin"""
     session.pop('admin_logged_in', None)
+    session['admin_logged_in'] = False
     return redirect(url_for('home'))
 
 @app.route('/admin/panel')
