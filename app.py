@@ -4,9 +4,16 @@ import os
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
+
+
 
 app = Flask(__name__)
 app.secret_key = "supersegreto"  # Cambia in produzione
+
+# Sessione utente: 30 minuti di inattività
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 
 @app.before_request
 def ensure_admin_flag():
@@ -221,6 +228,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
+            session.permanent = False  # Sessione scade dopo timeout
             session['user'] = email
             session['admin_logged_in'] = False  # forza disattivazione admin
             return redirect(url_for('area_personale'))
@@ -240,6 +248,7 @@ def logout():
 def area_personale():
     """Area personale utente con prenotazioni"""
     if 'user' not in session:
+        flash("Sessione scaduta, effettua nuovamente il login.", "warning")
         return redirect(url_for('login'))
 
     user_email = session['user']
@@ -262,6 +271,7 @@ def area_personale():
 def prenota_slot():
     """API per prenotare uno slot"""
     if 'user' not in session:
+        flash("Sessione scaduta, effettua nuovamente il login.", "warning")
         return redirect(url_for('login'))
 
     data = request.json
@@ -302,6 +312,7 @@ def prenota_slot():
 @app.route('/cancella_prenotazione', methods=['POST'])
 def cancella_prenotazione():
     if 'user' not in session:
+        flash("Sessione scaduta, effettua nuovamente il login.", "warning")
         return redirect(url_for('login'))
 
     data = request.json
@@ -338,6 +349,7 @@ def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
         if password == ADMIN_PASSWORD:
+            session.permanent = True  # Sessione resta finché non fa logout
             session['admin_logged_in'] = True
             return redirect(url_for('admin_panel'))
         else:
