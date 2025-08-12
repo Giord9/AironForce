@@ -410,10 +410,12 @@ def edit_slot(idx):
 # ==============================
 #  AVVIO APP
 # ==============================
+
+with app.app_context():
+    print("Creazione delle tabelle...")
+    db.create_all()
+    print("Tabelle create.")
+    #migrate_json_to_db()  # Esegui una sola volta, poi puoi commentarla
+
 if __name__ == "__main__":
-    with app.app_context():
-        print("Creazione delle tabelle...")
-        db.create_all()
-        print("Tabelle create.")
-        #migrate_json_to_db()  # Esegui una sola volta, poi puoi commentarla
     app.run(debug=True)
